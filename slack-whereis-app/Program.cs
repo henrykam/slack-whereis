@@ -32,10 +32,11 @@ namespace HenryKam.SlackWhereIs
                             .SetBasePath(env.ContentRootPath)
                             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                             .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                            .AddJsonFile($"secrets/appsettings.secrets.json", optional: true, reloadOnChange: true)
+                            .AddJsonFile($"Secrets/appsettings.secrets.json", optional: true, reloadOnChange: true)
                             .AddEnvironmentVariables();
-                    });
-                });
+                    }).UseUrls("http://*:5000");
+                })
+            ;
 
 
         

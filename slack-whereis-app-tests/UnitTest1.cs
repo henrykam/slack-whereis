@@ -21,13 +21,12 @@ namespace slack_whereis_app_tests
 
             var j = JsonConvert.SerializeObject(s);
 
-            //ExchangeProvider p = new ExchangeProvider(new Uri("https://exchange.absolute.com/ews/exchange.asmx"), "absolute.com", "SlackExchCalSA", "ET_>L)z5Sp-d@u");
-            //var rooms =  p.GetConfRoomsAddresses("Davie");
-            //bool isAvailable = p.GetAvailability("BVAN-Davie@absolute.com", out string details);
+            ExchangeProvider p = new ExchangeProvider(new ExchangeConfig() { Server = "https://exchange.absolute.com/ews/exchange.asmx", Domain = "absolute.com", Username = "SlackExchCalSA", Password = "ET_>L)z5Sp-d@u" });
+            bool isAvailable = p.GetAvailability("hkam@absolute.com", out string details);
 
 
-        
-        
+
+
         }
     }
 }

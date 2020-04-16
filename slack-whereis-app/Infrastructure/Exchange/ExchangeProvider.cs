@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.Exchange.WebServices.Data;
 
@@ -13,7 +14,7 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Exchange
         private Uri _serverUrl { get; }
         private string _domain { get; }
         private string _username { get; }
-        private string _password { get; }
+        private string _password { get; }        
 
         public ExchangeProvider(ExchangeConfig config)
         {
@@ -25,11 +26,11 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Exchange
 
         public bool GetAvailability(string smtpAddress, out string details)
         {
-            
-            DateTime currentDay = DateTime.Today;
-            DateTime currentTime = DateTime.Now;
+
+            DateTime currentDay = DateTime.UtcNow.Date;
+            DateTime currentTime = DateTime.UtcNow;
             //"BVAN-Davie@absolute.com"
-            ExchangeService service = new ExchangeService(ExchangeVersion.Exchange2013_SP1);
+            ExchangeService service = new ExchangeService(TimeZoneInfo.Utc);
             service.Credentials = new WebCredentials(_username, _password, _domain);
             service.Url = _serverUrl;
             var avail = service.GetUserAvailability(new List<AttendeeInfo>() { new AttendeeInfo(smtpAddress) }, new TimeWindow(currentDay, currentDay.AddDays(1)), AvailabilityData.FreeBusyAndSuggestions).Result;
@@ -69,13 +70,13 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Exchange
                                 }
                                 else
                                 {
-                                    details = $"Busy until {calendarEvent.EndTime.ToShortTimeString()}";
+                                    details = $"Busy until {calendarEvent.EndTime.ToLocalTime().ToString("h:mm tt")}";
                                     return false;
                                 }
                             }
                             else
                             {
-                                details = $"Available until {calendarEvent.StartTime.ToShortTimeString()}";
+                                details = $"Available until {calendarEvent.StartTime.ToLocalTime().ToString("h:mm tt")}";
                                 return true;
                             }
                         }
@@ -83,7 +84,7 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Exchange
 
                     if(isBusy)
                     {
-                        details = $"Busy until {lastEndTime.ToShortTimeString()}";
+                        details = $"Busy until {lastEndTime.ToLocalTime().ToString("h:mm tt")}";
                         return false;
                     }
                     else

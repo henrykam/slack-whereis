@@ -6,15 +6,19 @@ using System.Threading.Tasks;
 
 namespace HenryKam.SlackWhereIs.Application
 {
-    public interface ILocationRepository
+    public partial interface ILocationRepository
     {
         IEnumerable<Location> GetLocationByName(string name);
+
+        IEnumerable<Location> GetLocationByTag(string tag);
 
         Location GetLocationById(string id);
 
         IEnumerable<Location> GetLocations();
 
-        string AddLocation(Location location);
+        string AddLocation<T>(T location) where T : Location;
+
+        string UpdateLocation<T>(T location) where T : Location;
 
         string DeleteLocation(string id);
     }

@@ -42,7 +42,11 @@ namespace HenryKam.SlackWhereIs.Controllers
         // POST: Search
         [HttpPost]
         [Consumes("application/x-www-form-urlencoded")]
+
+#if !DEBUG
         [SlackAuthorization]
+#endif
+
         //[ValidateAntiForgeryToken]
         public IActionResult Search([FromForm] SlackRequest request, [FromServices] IServiceScopeFactory scopeFactory)
         {
@@ -110,8 +114,12 @@ namespace HenryKam.SlackWhereIs.Controllers
                     var locations = locationRepository.GetLocationByName(searchText);
                     if (!locations.Any())
                     {
-                        SlackCallbackHelper.PostCallback(callbackEndpoint, httpClientFactory, $"I couldn't find {searchText}");
-                        return new Task(() => { });
+                        locations = locationRepository.GetLocationByTag(searchText);
+                        if (!locations.Any())
+                        {
+                            SlackCallbackHelper.PostCallback(callbackEndpoint, httpClientFactory, $"I couldn't find {searchText}");
+                            return new Task(() => { });
+                        }
                     }
 
                     SimpleSlackBlockResponse r = new SimpleSlackBlockResponse();
@@ -130,12 +138,41 @@ namespace HenryKam.SlackWhereIs.Controllers
 
                                     if (meetingRoom.EmailAddress != null)
                                     {
-                                        available = _exchangeProvider.GetAvailability(meetingRoom.EmailAddress, out availabilityDetails);
+                                        try
+                                        {
+                                            available = _exchangeProvider.GetAvailability(meetingRoom.EmailAddress, out availabilityDetails);
+                                        }
+                                        catch(Exception ex)
+                                        {
+                                            _logger.LogError(ex, "Unable to obtain data from Exchange provider!");
+                                        }
                                     }
+                                    break;
+                                case Employee employee:
+                                    locationType = "Employee";
+
+                                    if (employee.EmailAddress != null)
+                                    {
+                                        try
+                                        {
+                                            available = _exchangeProvider.GetAvailability(employee.EmailAddress, out availabilityDetails);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            _logger.LogError(ex, "Unable to obtain data from Exchange provider!");
+                                        }
+                                    }
+                                    break;
+                                case Department department:
+                                    locationType = "Department";
+                                    break;
+                                default:
+                                    locationType = location.GetType().ToString();
                                     break;
                             }
 
-                            var s = SlackResponseFactory.CreateWhereIsResponse(location.Name, location.Office, location.MapImageUrl == null ? null : new Uri(location.MapImageUrl), locationType, availabilityDetails == " " ? UseStatus.None : (available ? UseStatus.Available : UseStatus.InUse), availabilityDetails, floor: location.Floor);
+                            var s = SlackResponseFactory.CreateWhereIsResponse(location.Name, location.Office, location.MapImageUrl == null ? null : new Uri(location.MapImageUrl), locationType, availabilityDetails == " " ? UseStatus.None : (available ? UseStatus.Available : UseStatus.InUse), availabilityDetails, floor: location.Floor, thumbUrl: string.IsNullOrEmpty(location.LocationImageUrl) ? null : new Uri(location.LocationImageUrl));
+                            //var s = SlackResponseFactory.CreateWhereIsResponse(location);
                             r.Append(s);
                         }
                     }

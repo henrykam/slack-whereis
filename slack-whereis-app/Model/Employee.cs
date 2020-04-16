@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HenryKam.SlackWhereIs.Model
 {
-    public class MeetingRoom : LocationWithAvailability
+    public class Employee : LocationWithAvailability
     {
     }
 }

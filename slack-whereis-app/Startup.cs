@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using HenryKam.SlackWhereIs.Application;
 using HenryKam.SlackWhereIs.Infrastructure;
+using HenryKam.SlackWhereIs.Infrastructure.EFCore;
 using HenryKam.SlackWhereIs.Infrastructure.Exchange;
 using HenryKam.SlackWhereIs.Infrastructure.Slack;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -31,7 +33,7 @@ namespace HenryKam.SlackWhereIs
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {            
+        {
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder.AddConsole();
@@ -39,15 +41,28 @@ namespace HenryKam.SlackWhereIs
                 loggingBuilder.AddDebug();
             });
 
-            services.AddControllers().AddNewtonsoftJson();            
-            services.AddDbContext<LocationDbContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("slackwhereis")).UseSnakeCaseNamingConvention());
-            services.AddScoped<ILocationRepository, PostgresLocationRepository>();
+            services.AddControllers().AddNewtonsoftJson();
+            services.AddDbContext<SlackWhereIsDbContext>(options => {
+                options.UseNpgsql(Configuration.GetConnectionString("slackwhereis")).UseSnakeCaseNamingConvention();
+                //options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                });
+                
+            services.AddScoped<ILocationRepository, EntityFrameworkLocationRepository>();
             services.AddTransient<BotProcessingService>();
             services.AddHostedService<BotProcessingService>();
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             services.AddHttpClient();
 
+            // 1. Add Authentication Services
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.Authority = "https://absoluteps.auth0.com/";
+                options.Audience = "WhereIs Slack Bot API on AWS";
+            });
 
             // Slack Configuration
             SlackConfig slackConfig = new SlackConfig();
@@ -67,16 +82,6 @@ namespace HenryKam.SlackWhereIs
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
-            //var builder = new ConfigurationBuilder()
-            //    .SetBasePath(env.ContentRootPath)
-            //    .AddJsonFile($"appsettings.json", optional: true, reloadOnChange: true)
-            //    //.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-            //    .AddJsonFile($"Secrets/appsettings.secrets.json", optional: true, reloadOnChange: true)
-            //    .AddEnvironmentVariables();
-
-            //Configuration = builder.Build();
-
-            //loggerFactory.LoggerFactory.Create(builder => builder.AddConsole()
 
             if (env.IsDevelopment())
             {
@@ -85,15 +90,12 @@ namespace HenryKam.SlackWhereIs
 
             app.UseHttpsRedirection();
 
-            //app.Use((context, next) =>
-            //{
-            //    context.Request.EnableBuffering();
-            //    return next();
-            //});
-
             app.UseRouting();
 
             app.UseAuthorization();
+
+            // 2. Enable authentication middleware
+            app.UseAuthentication();
 
             app.UseEndpoints(endpoints =>
             {

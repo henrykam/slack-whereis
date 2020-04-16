@@ -20,15 +20,17 @@ namespace HenryKam.SlackWhereIs.Application
             _taskQueue = taskQueue;
             _logger = logger;
             _services = services;
+            
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Bot Processing Service is starting.");
-
-            while (!stoppingToken.IsCancellationRequested)
+            CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var token = cts.Token;
+            while (!token.IsCancellationRequested)
             {
-                var workItem = await _taskQueue.DequeueAsync(stoppingToken);
+                var workItem = await _taskQueue.DequeueAsync(token);
 
                 try
                 {

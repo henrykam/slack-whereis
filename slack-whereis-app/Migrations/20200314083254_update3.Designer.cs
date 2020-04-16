@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HenryKam.SlackWhereIs.Migrations
 {
     [DbContext(typeof(SlackWhereIsDbContext))]
-    [Migration("20200229020050_update")]
-    partial class update
+    [Migration("20200314083254_update3")]
+    partial class update3
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -42,12 +42,8 @@ namespace HenryKam.SlackWhereIs.Migrations
                         .HasColumnName("location_image_url")
                         .HasColumnType("text");
 
-                    b.Property<string>("LocationType")
-                        .IsRequired()
-                        .HasColumnName("location_type")
-                        .HasColumnType("text");
-
                     b.Property<string>("MapImageUrl")
+                        .IsRequired()
                         .HasColumnName("map_image_url")
                         .HasColumnType("text");
 
@@ -61,6 +57,15 @@ namespace HenryKam.SlackWhereIs.Migrations
                         .HasColumnName("office")
                         .HasColumnType("text");
 
+                    b.Property<string>("Tags")
+                        .HasColumnName("tags")
+                        .HasColumnType("text");
+
+                    b.Property<string>("type")
+                        .IsRequired()
+                        .HasColumnName("type")
+                        .HasColumnType("text");
+
                     b.HasKey("Id")
                         .HasName("pk_location");
 
@@ -68,7 +73,41 @@ namespace HenryKam.SlackWhereIs.Migrations
                         .IsUnique()
                         .HasName("ix_location_name");
 
+                    b.HasIndex("Tags")
+                        .HasName("ix_location_tags");
+
                     b.ToTable("location");
+
+                    b.HasDiscriminator<string>("type").HasValue("Location");
+                });
+
+            modelBuilder.Entity("HenryKam.SlackWhereIs.Model.Department", b =>
+                {
+                    b.HasBaseType("HenryKam.SlackWhereIs.Model.Location");
+
+                    b.HasDiscriminator().HasValue("Department");
+                });
+
+            modelBuilder.Entity("HenryKam.SlackWhereIs.Model.Employee", b =>
+                {
+                    b.HasBaseType("HenryKam.SlackWhereIs.Model.Location");
+
+                    b.Property<string>("EmailAddress")
+                        .HasColumnName("email_address")
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("Employee");
+                });
+
+            modelBuilder.Entity("HenryKam.SlackWhereIs.Model.MeetingRoom", b =>
+                {
+                    b.HasBaseType("HenryKam.SlackWhereIs.Model.Location");
+
+                    b.Property<string>("EmailAddress")
+                        .HasColumnName("email_address")
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("MeetingRoom");
                 });
 #pragma warning restore 612, 618
         }

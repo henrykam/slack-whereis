@@ -10,22 +10,21 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Slack
     public static class SlackResponseFactory
     {
 
-        public static SimpleSlackBlockResponse CreateWhereIsResponse(string name, string office, Uri mapUrl, string locationType = "Other", UseStatus useStatus = UseStatus.None, string useStatusString = "", Uri thumbUrl = null, string floor = "")
+        public static SimpleSlackBlockResponse CreateWhereIsResponse(string name, string office, Uri mapUrl, string locationType = " ", UseStatus useStatus = UseStatus.None, string useStatusString = " ", Uri thumbUrl = null, string floor = " ")
         {
             if(thumbUrl == null)
             {
                 thumbUrl = new Uri(@"https://api.slack.com/img/blocks/bkb_template_images/notifications.png");
             }
-            //*Currently in use until: 4:30pm*
 
             ContextBlock useStatusBlock = new ContextBlock();
             if (useStatus == UseStatus.InUse)
             {
-                useStatusBlock = useStatusBlock.AddElement(new MarkdownContextElement(":warning: " +useStatusString));
+                useStatusBlock = useStatusBlock.AddElement(new MarkdownContextElement(":x: " +useStatusString));
             }
             else if(useStatus == UseStatus.Available)
             {
-                useStatusBlock = useStatusBlock.AddElement(new MarkdownContextElement(":accept: "+useStatusString));
+                useStatusBlock = useStatusBlock.AddElement(new MarkdownContextElement(":heavy_check_mark: "+useStatusString));
             }
             else
             {
@@ -34,7 +33,7 @@ namespace HenryKam.SlackWhereIs.Infrastructure.Slack
 
             SimpleSlackBlockResponse r = new SimpleSlackBlockResponse();
             r.AddBlock(new DividerBlock())
-                .AddBlock(new SectionBlock() { Text = new MarkdownSectionBlockText($"*{name}*\n{locationType}\n{office}\n{floor}"), Accessory = new ImageAccessory(thumbUrl, locationType) })
+                .AddBlock(new SectionBlock() { Text = new MarkdownSectionBlockText($"*{name}*\n{locationType}\n{floor}\n{office}"), Accessory = new ImageAccessory(thumbUrl, locationType) })
                 .AddBlock(useStatusBlock)
                 .AddBlock(new ImageBlock("Map", mapUrl, "Map"));
 
